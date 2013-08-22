@@ -92,6 +92,29 @@
 
 )
 
+(class TestBind* is NuTestCase
+  ; test nil
+  (- (id) test-nil is
+    (assert_equal nil (bind* nil 4))
+  )
+
+  ; test func
+  (- (id) test-func is
+    (assert_equal 10 ((bind* (do () 5) (do (x) (* 2 x)) )) )
+  )
+
+  ; test const
+  (- (id) test-const is
+    (assert_equal 10 (bind* 5 (do (x) (* 2 x)) ) )
+  )
+
+  ; test func
+  (- (id) test-func-to-const is
+    (assert_equal 20 ((bind* (do () 5) (do (x) (* 2 x)) (do (x) (* 2 x ) )) ) )
+  )
+
+)
+
 (class TestCaseValue is NuTestCase
   ; test array
   (- (id) test-array is

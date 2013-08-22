@@ -154,6 +154,11 @@
 )
 
 ; bind*
+; calling "bind" in recursion on every argument
+; 1 arg => return arg
+; 2 arg => return bind arg
+; 3 arg => return (bind (bind arg1 arg2) arg3)
+; 4 arg => return (bind (bind (bind arg1 arg2) arg3) arg4)
 (macro bind* (*body)
   (set arg-length (*body length) )
   (case arg-length
@@ -262,20 +267,174 @@
 )
 
 ; unify
+(function unify (u v S)
+  (let ((u (walk u S)) (v (walk v S)))
+    (cond
+      ((and (pair? u) (pair? v))
+        (let ((S (unify (car u) (car v) S)))
+          (and S (unify (cdr u) (cdr v) S ))))
+      (else (unify-nonpair u v S))
+    )
+  )
+)
 
 ; unify-nonpair
+(function unify-nonpair (u v S)
+  (cond
+    ((eq? u v) S)
+    ((var? u) (ext-S u v S))
+    ((var? v) (ext-S u v S))
+    (else nil)
+  )
+)
 
 ; ext-S
+(function ext-S (x v S)
+  (case-value v
+    ((y) (cons `(,x . ,y) S))
+    ((au du) (cond
+      ((occurs-check x v S) nil)
+      (else (cons `(,x . ,v) S))))
+    ((v) (cons `(,x . ,v) S )))
+)
 
 ; occurs-check
+(function occurs-check (x v S)
+  (case-value (walk v S)
+    ; y is var
+    ((y) (eq? y x))
+    ; walk v S is a pair
+    ((av dv) (or (occurs-check x av S)
+                 (occurs-check x dv S)))
+    ; else
+    ((v) nil))
+)
 
 ; walk* - wait for case-value
 
 
 ; reify - wait for walk*, reify-S, 
 
+; line 187
+; pr->tag
+(function pr->tag (pr) (car (rhs pr)))
 
+; line 189
+; pr->pred
+(function pr->pred (pr) (cdr (rhs pr)))
 
+; line 191
+; =/= - wait for post-unify-=/=
+
+; post-unify-=/= - wait for prefix-S, subsume, unit
+
+; line 209
+; prefix-S
+(function prefix-S (S+ S)
+  (cond
+    ((eq? S+ S) nil)
+    (else (cons (car S+) (prefix-S (cdr S+) S)))
+  )
+)
+
+; line 237
+; == - wait for post-unify-==
+
+; post-unify-== - wait for post-verify-D
+
+; line 257
+; verify-D
+(function verify-D (D S)
+  (cond
+    ((null? D) nil)
+    (else
+      (let ((D+ (verify-D (cdr D) S)))
+        (cond
+          (D+ (verify-D+ (car D) D+ S))
+          (else nil)
+        )
+      )
+    )
+  )
+)
+
+; line 266
+; verify-D+
+(function verify-D+ (d D S)
+  (let ((S+ (unify* d S) ))
+    (cond
+      (S+ (cond
+        ((eq? S+ S) nil)
+        (else (cons (prefix-S S+ S) D) )
+      ))
+    )
+  )
+)
+
+; line 276
+; post-verify-D - wait for verify-A, post-verify-A
+
+; verify-A - wait for ext-A
+
+; post-verify-A, wait for subsume, post-verify-T, verify-T
+
+; verify-T, wait for verify-T+
+
+; verify-T+ , wait for ext-T+
+
+; line 457
+; ext-T+
+(function ext-T+ (x tag pred S T)
+  (cond
+    ((null? T) `((, x . (,tag . ,pred))))
+    (else
+      (let ((t (car t)))
+        (let ((t-tag (pr->tag t)))
+          (cond
+            ((eq? (walk (lhs t) S) x)
+              (cond
+                ((tag=? t-tag tag) '())
+                (else
+                  (ext-T+ x tag pred S (cdr T))
+                )
+              )
+            )
+            (else
+              (ext-T+ x tag pred S (cdr T))
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+; line 475
+; make-pred-T
+(function make-pred-T (tag)
+  (do (x)
+    (not (and (tag? x) (tag=? x tag)))
+  )
+)
+
+; line 480
+; tag?
+(function tag? (tag)
+  (symbol? tag)
+)
+
+; line 484
+; tag=?
+; same as eq?
+(function tag=? (tag1 tag2)
+  (eq? tag1 tag2)
+)
+
+; line 704
+; unify*
+(function unify* (S+ S)
+  (unify (S+ map:lhs) (S+ map:rhs) S)
+)
 
 ; move to scheme.nu
 
@@ -283,5 +442,3 @@
 (function assq (key hash)
   (do (key hash) ((hash find: (do (e) (eq (car e) key)))))
 )
-
-
