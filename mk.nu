@@ -337,6 +337,13 @@
   )
 )
 
+; line 215
+; subsume - wait for subsumed-pr?
+
+; line 220
+; subsumed-pr?
+
+
 ; line 237
 ; == - wait for post-unify-==
 
@@ -376,11 +383,36 @@
 
 ; verify-A - wait for ext-A
 
+; line 302
 ; post-verify-A, wait for subsume, post-verify-T, verify-T
 
-; verify-T, wait for verify-T+
 
-; verify-T+ , wait for ext-T+
+; verify-T
+(set verify-T 
+  (do (T S)
+    (cond
+      ((null? T) nil)
+      ((verify-T (cdr T) S) => (verify-T+ (lhs (car T)) T S))
+      (else nil))))
+
+; verify-T+
+(function verify-T+ (x T S)
+  (do (T0)
+    (let ((tag (pr->tag (car T)))
+            (pred (pr->pred (car T))))
+	(case-value (walk x S)
+	  ((x) (cond
+                 ((ext-T+ x tag pred S T0) =>
+                  (do (T+) (append T+ T0)))
+                 (else nil)))
+          ((au du) (cond
+                     (((verify-T+ au T S) T0) =>
+                      (verify-T+ du T S))
+                     (else nil)))
+          ((u) (and (pred u) T0)))
+    )
+  )
+)
 
 ; line 457
 ; ext-T+
