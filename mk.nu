@@ -247,21 +247,24 @@
   )
 )
 
-(function var (dummy) (array dummy))
-
-(function var? (v) (send v isKindOfClass:(NSArray class)))
-
-; lhs (left-hand-side) is the same as car
-(function lhs (pr) (car pr))
-
-; rhs (right-hand-side) is the same as cdr
-(function rhs (pr) (cdr pr))
-
-; walk
-(function walk (u S)
+; line 163
+; ext-A
+(function ext-A (x tag pred S A)
   (cond
-    ((and (var? u) (assq u S)) =>
-      ( do (pr) (walk (rhs pr) S ))
+    ((null? A) `((,x . (,tag . ,pred))))
+    (else
+      (let ((a (car A)) (A (cdr A)))
+        (let ((a-tag (pr->tag a)))
+          (cond
+            ((eq? (walk (lhs a) S) x)
+             (cond
+               ((tag=? a-tag tag) '())
+               (else nil)
+             ))
+            (else (ext-A x tag pred S A) )
+          )
+        )
+      )
     )
   )
 )
@@ -345,9 +348,9 @@
 
 
 ; line 237
-; == - wait for post-unify-==
+; == TODO: post-unify-==
 
-; post-unify-== - wait for post-verify-D
+; post-unify-== TODO: post-verify-D
 
 ; line 257
 ; verify-D
@@ -379,12 +382,12 @@
 )
 
 ; line 276
-; post-verify-D - wait for verify-A, post-verify-A
+; post-verify-D - TODO: verify-A, post-verify-A
 
-; verify-A - wait for ext-A
+; verify-A
 
 ; line 302
-; post-verify-A, wait for subsume, post-verify-T, verify-T
+; post-verify-A, TODO: subsume, post-verify-T, verify-T
 
 
 ; verify-T
@@ -461,6 +464,31 @@
 (function tag=? (tag1 tag2)
   (eq? tag1 tag2)
 )
+
+; line 488
+(function var (dummy) (array dummy))
+
+; line 490
+(function var? (v) (send v isKindOfClass:(NSArray class)))
+
+; line 501
+; lhs (left-hand-side) is the same as car
+(function lhs (pr) (car pr))
+
+; line 503
+; rhs (right-hand-side) is the same as cdr
+(function rhs (pr) (cdr pr))
+
+; line 509
+; walk
+(function walk (u S)
+  (cond
+    ((and (var? u) (assq u S)) =>
+      ( do (pr) (walk (rhs pr) S ))
+    )
+  )
+)
+
 
 ; line 704
 ; unify*
