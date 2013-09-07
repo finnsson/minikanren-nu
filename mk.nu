@@ -385,6 +385,33 @@
 ; post-verify-D - TODO: verify-A, post-verify-A
 
 ; verify-A
+(function verify-A (A S)
+  (cond
+    ((null? A) nil)
+    (else
+      (set A0 (verify-A (cdr A) S))
+      (cond
+        ((A0)
+          (let ((u (walk (lhs (car A)) S))
+                (tag (pr->tag (car A)))
+                (pred (pr->pred (car A))))
+            (cond
+              ((var? u)
+               (set A+ (ext-A u tag pred S A0))
+               (cond
+                 ((A+) append A+ A0)
+                 (else nil)
+               )
+              )
+              (else (and (pred u) A0 ) )
+            )
+          )
+        )
+        (else nil)
+      )
+    )
+  )
+)
 
 ; line 302
 ; post-verify-A, TODO: subsume, post-verify-T, verify-T
