@@ -373,11 +373,21 @@
 
 
 ; line 237
-; == TODO: post-unify-==
+; ==
+(function === (u v)
+  (lambdag@ (c S D A T
+    (let ((unified (unify u v S)))
+      (cond
+        (unified ((post-unify-== c S D A T) unified))
+        (else (mzero))
+      )
+    )
+  ))
+)
 
 
 ; line 245
-; post-unify-== TODO: post-verify-D
+; post-unify-==
 (function post-unify-== (c S D A T)
   (do (S+)
     (cond
