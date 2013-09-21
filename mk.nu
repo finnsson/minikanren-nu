@@ -375,7 +375,31 @@
 ; line 237
 ; == TODO: post-unify-==
 
+
+; line 245
 ; post-unify-== TODO: post-verify-D
+(function post-unify-== (c S D A T)
+  (do (S+)
+    (cond
+      ((eq S+ S) (unit c))
+      (else
+        (let (verified ((verify-D D S+)))
+          (cond
+            (verified
+              (let ((post-verified (post-verify-D S+ D A T)))
+                (cond
+                  (post-verified (unit post-verified))
+                  (else (mzero))
+                )
+              )
+            )
+            (else (mzero))
+          )
+        )
+      )
+    )
+  )
+)
 
 ; line 257
 ; verify-D
@@ -407,7 +431,16 @@
 )
 
 ; line 276
-; post-verify-D - TODO: post-verify-A
+; post-verify-D
+(function post-verify-D (S D A T)
+  (let (verified (verify-A A S) )
+    (cond
+      (verified ((post-verify-A S D T) verified))
+      (else nil)
+    )
+  )
+)
+
 
 ; verify-A
 (function verify-A (A S)
@@ -439,7 +472,17 @@
 )
 
 ; line 302
-; post-verify-A, TODO: subsume, post-verify-T
+; post-verify-A
+(function post-verify-A (S D T)
+  (do (A)
+    (let ((D (subsume A D)) (verified (verify-T T S))  )
+      (cond
+        (verified ( (post-verify-T S D A) verified ))
+        (else nil) 
+      )
+    )
+  )
+)
 
 
 ; line 310
