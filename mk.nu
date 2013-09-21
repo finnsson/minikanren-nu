@@ -329,7 +329,7 @@
 ; line 191
 ; =/= - wait for post-unify-=/=
 
-; post-unify-=/= - wait for prefix-S, subsume, unit
+; post-unify-=/= - wait for prefix-S, unit
 
 ; line 209
 ; prefix-S
@@ -341,10 +341,35 @@
 )
 
 ; line 215
-; subsume - wait for subsumed-pr?
+; subsume
+(function subsume (ApT D)
+  (remp (do (d) (exists (subsumed-pr? ApT) d)) D)
+) 
 
 ; line 220
 ; subsumed-pr?
+(function subsumed-pr? (ApT)
+  (do (pr-d)
+    (let ((u (rhs pr-d)))
+      (cond
+        ((var? u) nil)
+        (else
+          (let ((pr (assq (lhs pr-d) ApT)))
+            (and pr
+              (let ((tag (pr->tag pr)))
+                (cond
+                  ((and (tag? tag) (tag? u) (tag=? u tag)))
+                  (((pr->pred pr) u) nil)
+                  (else t)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
 
 
 ; line 237
@@ -382,7 +407,7 @@
 )
 
 ; line 276
-; post-verify-D - TODO: verify-A, post-verify-A
+; post-verify-D - TODO: post-verify-A
 
 ; verify-A
 (function verify-A (A S)
@@ -414,9 +439,10 @@
 )
 
 ; line 302
-; post-verify-A, TODO: subsume, post-verify-T, verify-T
+; post-verify-A, TODO: subsume, post-verify-T
 
 
+; line 310
 ; verify-T
 (set verify-T 
   (do (T S)
@@ -425,6 +451,7 @@
       ((verify-T (cdr T) S) => (verify-T+ (lhs (car T)) T S))
       (else nil))))
 
+; line 317
 ; verify-T+
 (function verify-T+ (x T S)
   (do (T0)
@@ -440,6 +467,38 @@
                       (verify-T+ du T S))
                      (else nil)))
           ((u) (and (pred u) T0)))
+    )
+  )
+)
+
+; line 333
+; post-verify-T
+(function post-verify-T (S D A)
+  (subsume-T T S (subsume T D) A nil)
+)
+
+; line 338
+(function subsume-T (T+ S D A T)
+  (let ((x* (rem-dups (map lhs A))))
+    (subsume-T+ x* t+ S D A T)
+  )
+)
+
+; line 343
+(function subsume-T+ (x* T+ S D A T)
+  (cond
+    ((null? x*)
+      (let ((T (append T+ T)))
+        `(,S ,D ,A ,T))
+    )
+    (else
+      (let ((x (car x*)) (x* (cdr x*)))
+        (let ((DpT (update-DpT x D S A T+)))
+          (let ((D (car DpT)) (+ (cdr DpT)))
+            (subsume-T+ x* T+ S D A T)
+          )
+        )
+      )
     )
   )
 )
@@ -529,3 +588,13 @@
 (function assq (key hash)
   (do (key hash) ((hash find: (do (e) (eq (car e) key)))))
 )
+
+(function remp (proc l)
+  (l select:(do (i) (not (proc i))  ))
+)
+
+(function exists (proc l)
+  (l find:proc)
+)
+
+(set any exists)
