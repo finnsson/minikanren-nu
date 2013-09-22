@@ -83,7 +83,7 @@
 (set empty-f (inc nil))
 
 
-(macro case-inf (v a b c d)
+(macro case-inf-old (v a b c d)
   `(
     (let ((__c-inf ,v) )
     (cond
@@ -97,15 +97,21 @@
   )
 )
 
-; TODO: move to test file
-;(case-inf (list 4 do?)
-;  (() (puts "nil")); if nil
-;  (f (puts "in f")); if do-block
-;  (c (puts "in c")); if value?
-;  ((c f) (puts (+ "f(c): " (f c) )))
-;)
+(macro case-inf (e (() e0) ((f) e1) ((c) e2) ((c2 f2) e3))
+  `(
+    (let ((__c-inf ,e) )
+    (cond
+      ((not __c-inf) ,e0)
+      ((do? __c-inf) (let (,f __c-inf) ,e1 ))
+      ((not (and (pair? __c-inf)
+        (do1? (cdr __c-inf))))
+        (let (,c __c-inf) ,e2))
+      (else ( let (( ,c2 (car __c-inf)) (,f2 (cadr __c-inf))) ,e3)) 
+    ))
+  )
+)
 
-; run - wait for fresh
+; run
 (macro run (n x g0 *g)
   (take n
     (do ()
@@ -133,17 +139,18 @@
     (else
       (case-inf (f)
         (() nil)
-        (f (take n f))
-        (c (cons c nil))
+        ((f) (take n f))
+        ((c) (cons c nil))
         ((c f) (cons c (take (- n 1) f)))
       )
     )
   )
 )
 
+; line 75
 ; fresh
 (macro fresh (bindings g0 *gs)
-  `(do c
+  `(do (c)
     (inc
       (let
         ( ,(bindings map: (do (x) (list x array `',x ) ) ) ) 
@@ -171,8 +178,8 @@
 (function bind (c-inf g)
   (case-inf c-inf
     (() (mzero) )
-    (f (inc (bind (f) g)) )
-    (c (g c) )
+    ((f) (inc (bind (f) g)) )
+    ((c) (g c) )
     ( (c f) (mplus (g c) (inc (bind (f) g) ) ) )
   )
 )
@@ -181,8 +188,8 @@
 (function mplus (c-inf f)
   (case-inf c-inf
     (() (f))
-    (f* (inc (mplus (f) f*)))
-    (c (cons c f))
+    ((f*) (inc (mplus (f) f*)))
+    ((c) (cons c f))
     ((c f*) (cons c (inc (mplus (f) f*))))
 
   )

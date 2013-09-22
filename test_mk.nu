@@ -134,3 +134,25 @@
   )
 )
 
+(class TestCaseInf is NuTestCase
+  ; test false (nil?)
+  (- (id) test-false is
+    (assert_equal "false" (case-inf nil (() "false") ((f) ("f")) ((c) ("c")) ((a b) ("pair"))))
+  )
+
+  ; test (do() )
+  (- (id) test-do is
+    (assert_equal "f" (case-inf (do () 4) (() "false") ((f) ("f")) ((c) ("c")) ((a b) ("pair"))))
+  )
+
+
+  ; test value
+  (- (id) test-value is
+    (assert_equal "c" (case-inf 4 (() "false") ((f) ("f")) ((c) ("c")) ((a b) ("pair"))))
+  )
+
+  ; test (value do())
+  (- (id) test-pair is
+    (assert_equal 16 (case-inf (list 4 (do (x) (* x x))) (() "false") ((f) ("f")) ((c) ("c")) ((c f) (f c))))
+  )
+)
